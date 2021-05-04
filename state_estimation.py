@@ -16,7 +16,7 @@ class EKF:
         self.cov_posterior = np.zeros(4)
         # self.Q = np.diag([0.1, 0.3])  # covariance of measurement noise (Q)
         self.Q = np.diag([0.1, 0.3])  # covariance of measurement noise (Q)
-        self.R = 100*np.diag([0.01,0.01,0.01, 0.01])
+        self.R = np.diag([0.01,0.01,0.01, 0.01])
 
         # Params
         self.delta_t = 0.1
@@ -103,7 +103,7 @@ class EKF:
             process_noise[1,0] = np.random.normal(loc=0, scale=np.sqrt(self.R[1, 1]))
             process_noise[2,0] = np.random.normal(loc=0, scale=np.sqrt(self.R[2, 2]))
             process_noise[3,0] = np.random.normal(loc=0, scale=np.sqrt(self.R[3, 3]))
-            self.state_prior = self.motion_model(self.state_posterior, self.u, self.delta_t, self.L)
+            self.state_prior = self.motion_model(self.state_posterior, self.u, self.delta_t, self.L, noise=process_noise)
             """
             Step 2
             """
@@ -142,6 +142,8 @@ class EKF:
             Step 5
             """
             self.cov_posterior = np.dot((np.eye(4) - np.dot(K, H)), self.cov_prior)  # output dim: 4x4
+            # self.cov_posterior = self.cov_prior - np.dot()  # output dim: 4x4
+            self.cov_prior = self.cov_posterior
 
             # Display pose estimate
             print("state: {}".format(self.state_posterior))
@@ -159,46 +161,53 @@ if __name__ == '__main__':
         ekf.run()
         # Plotting
         t = np.arange(0, 10, 0.1)
-        fig = plt.figure(figsize=(24, 12))
-        fig.add_subplot(3, 2, 1)
-        plt.plot(t, ekf.gt_history[0], 'bo')
-        plt.plot(t, ekf.z_history[0]*np.cos(ekf.z_history[1]), 'r+')
-        plt.plot(t, ekf.estimated_history[0], 'g-')
-        plt.legend(["Ground Truth", "Measurement", "Estimated"])
-        plt.ylabel("x[m]")
-        plt.xlabel("t[s]")
-        plt.title("X")
-        fig.add_subplot(3, 2, 2)
+        # fig = plt.figure(figsize=(24, 12))
         plt.plot(t, ekf.gt_history[1], 'bo')
-        plt.plot(t, ekf.z_history[0]*np.sin(ekf.z_history[1]), 'r+')
+        plt.plot(t, ekf.z_history[0]*np.sin(ekf.z_history[1]), 'r-')
         plt.plot(t, ekf.estimated_history[1], 'g-')
         plt.legend(["Ground Truth", "Measurement", "Estimated"])
         plt.ylabel("y[m]")
         plt.xlabel("t[s]")
-        plt.title("Y")
-        fig.add_subplot(3, 2, 3)
-        plt.plot(t, ekf.gt_history[2], 'bo')
-        plt.plot(t, ekf.estimated_history[2], 'g-')
-        plt.legend(["Ground Truth", "Estimated"])  # No measurement available
-        plt.ylabel("theta[rad]")
-        plt.xlabel("t[s]")
-        plt.title("Theta")
-        fig.add_subplot(3, 2, 4)
-        plt.plot(t, ekf.gt_history[3], 'bo')
-        plt.plot(t, ekf.estimated_history[3], 'g-')
-        plt.legend(["Ground Truth", "Estimated"])  # No measurement available
-        plt.ylabel("delta[rad]")
-        plt.xlabel("t[s]")
-        plt.title("Delta")
-        fig.add_subplot(3, 2, 5)
-        plt.plot(ekf.gt_history[0], ekf.gt_history[1], "bo")
-        plt.plot(ekf.estimated_history[0], ekf.estimated_history[1], "go")
-        plt.legend(["Ground Truth", "Estimated"])  # No measurement available
-        plt.ylabel("y[m]")
-        plt.xlabel("x[m]")
-        plt.title("XY")
-        plt.suptitle(f"State Estimation Result with R = diag({ekf.R[0,0], ekf.R[1,1], ekf.R[2,2]})")
+        # fig.add_subplot(3, 2, 1)
+        # plt.plot(t, ekf.gt_history[0], 'bo')
+        # plt.plot(t, ekf.z_history[0]*np.cos(ekf.z_history[1]), 'r-')
+        # plt.plot(t, ekf.estimated_history[0], 'g-')
+        # plt.legend(["Ground Truth", "Measurement", "Estimated"])
+        # plt.ylabel("x[m]")
+        # plt.xlabel("t[s]")
+        # plt.title("X")
+        # fig.add_subplot(3, 2, 2)
+        # plt.plot(t, ekf.gt_history[1], 'bo')
+        # plt.plot(t, ekf.z_history[0]*np.sin(ekf.z_history[1]), 'r-')
+        # plt.plot(t, ekf.estimated_history[1], 'g-')
+        # plt.legend(["Ground Truth", "Measurement", "Estimated"])
+        # plt.ylabel("y[m]")
+        # plt.xlabel("t[s]")
+        # plt.title("Y")
+        # fig.add_subplot(3, 2, 3)
+        # plt.plot(t, ekf.gt_history[2], 'bo')
+        # plt.plot(t, ekf.estimated_history[2], 'g-')
+        # plt.legend(["Ground Truth", "Estimated"])  # No measurement available
+        # plt.ylabel("theta[rad]")
+        # plt.xlabel("t[s]")
+        # plt.title("Theta")
+        # fig.add_subplot(3, 2, 4)
+        # plt.plot(t, ekf.gt_history[3], 'bo')
+        # plt.plot(t, ekf.estimated_history[3], 'g-')
+        # plt.legend(["Ground Truth", "Estimated"])  # No measurement available
+        # plt.ylabel("delta[rad]")
+        # plt.xlabel("t[s]")
+        # plt.title("Delta")
+        # fig.add_subplot(3, 2, 5)
+        # plt.plot(ekf.gt_history[0], ekf.gt_history[1], "bo")
+        # plt.plot(ekf.estimated_history[0], ekf.estimated_history[1], "go")
+        # plt.legend(["Ground Truth", "Estimated"])  # No measurement available
+        # plt.ylabel("y[m]")
+        # plt.xlabel("x[m]")
+        # plt.title("XY")
+        # plt.suptitle(f"State Estimation Result with R = diag({ekf.R[0,0], ekf.R[1,1], ekf.R[2,2]})")
+        # plt.show()
+        # fig.savefig("plots/problem2_with_process_noise_large.eps")
         plt.show()
-        fig.savefig("plots/problem2_with_process_noise_large.eps")
     except KeyboardInterrupt:
         exit(0)
